@@ -3,16 +3,12 @@ class ContentNode
 
   def initialize(rule)
     @rule = rule
-    @content = ""
-    @nodes = []
+    @content = []
   end
 
+  # Can add Strings or other ContentNodes
   def add_to_content(c)
     @content << c
-  end
-
-  def add_node(el)
-    @nodes << el
   end
 
   def build_html_open
@@ -32,6 +28,10 @@ class ContentNode
   end
 
   def build_html
-    build_html_open + @content + build_html_close
+    to_s
+  end
+
+  def to_s
+     @content.join()
   end
 end

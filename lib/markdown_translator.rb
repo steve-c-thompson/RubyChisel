@@ -20,13 +20,11 @@ class MarkdownTranslator
   # read string and see what it starts with, then use rule to read to end, or end of input
   # will have to strip \n from content to match expected output
   def to_html(input)
-
-    input = trim_leading_newlines(input)
     # build nodes for lines
-    lines = input.split('\n\n')
-
+    lines = input.split("\n\n")
     lines.each do |line|
-        @content_element_stack << build_node(line, @line_rules)
+      #puts "line: %#{line}%"
+        @content_element_stack << build_top_level_node(line, @line_rules)
     end
 
     # builds nodes for each node's inner content
@@ -40,41 +38,27 @@ class MarkdownTranslator
     output.gsub("\n", " ")
   end
 
-  def trim_leading_newlines(input)
-    # eat any leading \n
-    i = 0
-    while (i < input.length) do
-      c = input[i]
-      if(i != '\n')
-        break;
-      end
-      i += 1
-    end
-    input = input[i...input.length]
-  end
-
-  # build a node from this string, checking for the start
-  # of any other nodes within the node
-  # closure_stack is any outer rules that could be closing
-  def build_node(input, rules)
-
-    # check what this text starts with from rules
-    new_rule_index = 0
+  def build_top_level_node(input, rules)
+    rule_index = 0
+    # see if this content matches any rules
     rule_key = rules.keys().find do |key|
-      new_rule_index = input.index(key)
-      new_rule_index && new_rule_index >= 0
+      rule_index = input.index(key)
+      rule_index && rule_index >= 0
     end
-    # require 'pry'
-    # binding.pry
-    new_rule_index = 0 if !new_rule_index
+    rule_index = 0 if !rule_index
 
-    end_index = 0
-    rule = nil
+    rule_end_length = 0
     if(rule_key)
       rule = rules[rule_key]
 
       rule_end = rule.md_close
-      # TODO: scan for other new rules
+      rule_end_length = rule_end.length
+    end
+    if(rule_key)
+      rule = rules[rule_key]
+
+      rule_end = rule.md_close
+
       # find where to end
       if(rule_end.length > 0)
         idx = input.index(rule_end)
@@ -91,13 +75,76 @@ class MarkdownTranslator
       end_index = input.length
     end
 
-    st = new_rule_index + rule_key.length
+    st = rule_index + rule_key.length
+    #require 'pry'
+    #binding.pry
+    content = input[st...end_index]
+
+    node = ContentNode.new(rule)
+    node.add_to_content(node.build_html_open)
+    node.add_to_content(content)
+    node.add_to_content(node.build_html_close)
+
+    end_index += rule_end_length
+    # Do something with the rest of the content
+    # For multi-formatted things like <ul>, have to check
+    # parent node
+    if end_index < input.length
+      input_sub = input[end_index..-1]
+      new_node = build_top_level_node(input_sub, rules)
+      node.add_to_content(new_node.content)
+    end
+    return node
+  end
+
+  # build a node from this string, checking for the start
+  # of any other nodes within the node
+  # closer is the parent's closing tag
+  def build_inline_node(input, rules, closer=nil)
+
+    # check what this text starts with from rules
+    rule_index = 0
+    rule_key = rules.keys().find do |key|
+      rule_index = input.index(key)
+      rule_index && rule_index >= 0
+    end
+    # require 'pry'
+    # binding.pry
+    rule_index = 0 if !rule_index
+
+    end_index = 0
+    rule = nil
+    if(rule_key)
+      rule = rules[rule_key]
+
+      rule_end = rule.md_close
+      # TODO: scan for new rule or end of this rule
+      # and use substrings
+
+      # find where to end
+      if(rule_end.length > 0)
+        idx = input.index(rule_end)
+        if(idx)
+          end_index = idx
+        else
+          end_index = input.length
+        end
+      else
+        end_index = input.length
+      end
+
+    else
+      end_index = input.length
+    end
+
+    st = rule_index + rule_key.length
     #require 'pry'
     #binding.pry
     content = input[st...end_index]
 
     node = ContentNode.new(rule)
     node.add_to_content(content)
+
 
     return node
   end
