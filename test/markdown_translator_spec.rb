@@ -40,7 +40,7 @@ describe MarkdownTranslator do
   end
 
   it "parses h4 headers and paragraphs" do
-    test_str = "#### This is a header\nAnd a paragraph.\nAnd another line."
+    test_str = "\n\n#### This is a header\nAnd a paragraph.\nAnd another line."
     expected = '<h4>This is a header</h4><p>And a paragraph. And another line.</p>'
     expect(@translator.to_html(test_str)).to eq expected
   end
@@ -48,6 +48,12 @@ describe MarkdownTranslator do
   it "parses chunks together" do
     test_str = "#### This is a header\nAnd a paragraph.\n\nAnd another paragraph.\n\n# Header 1"
     expected = '<h4>This is a header</h4><p>And a paragraph.</p><p>And another paragraph.</p><h1>Header 1</h1>'
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "parses chunks of headers and paragraphs" do
+    test_str = "Paragraph text\n# Header 1\nParagraph 2\n## Header 2"
+    expected = '<p>Paragraph text</p><h1>Header 1</h1><p>Paragraph 2</p><h2>Header 2</h2>'
     expect(@translator.to_html(test_str)).to eq expected
   end
 

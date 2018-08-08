@@ -21,21 +21,84 @@ class MarkdownTranslator
   # will have to strip \n from content to match expected output
   def to_html(input)
     # build nodes for lines
-    lines = input.split("\n\n")
-    lines.each do |line|
-      #puts "line: %#{line}%"
-        @content_element_stack << build_top_level_node(line, @line_rules)
+    chunks = input.split("\n\n")
+    output = ""
+    chunks.each do |chunk|
+      output += build_top_level_content(chunk)
     end
+
+    output
 
     # builds nodes for each node's inner content
     # require 'pry'
     # binding.pry
 
-    output = @content_element_stack.reduce("") do |str, node|
-      str << node.build_html
+    # output = @content_element_stack.reduce("") do |str, node|
+    #   str << node.build_html
+    # end
+
+    #output.gsub("\n", " ")
+  end
+
+  # This handles grouped lines and assumes
+  # headers can follow paragraph lines
+  def build_top_level_content(chunk)
+    # eat any whitespace
+    chunk.strip!
+    lines = chunk.split("\n")
+
+    handled_arr = []  # 2D array of whether lines have been handled
+
+    i = 0
+    while i < lines.length do
+      handled = false
+      if(lines[i].start_with? "#")
+        lines[i] = header(lines[i])
+        handled = true
+      end
+      handled_arr[i] = [handled, lines[i]]
+      i += 1
     end
 
-    output.gsub("\n", " ")
+    # see which lines have not been handled
+    # and join in order
+    groups = handled_arr.chunk do |arr|
+      arr[0]
+    end
+
+    translated = []
+    # now iterate through groups
+    # handle group *
+    # handle group >
+    # handle group unhandled
+    grouped_lines = groups.each do |handled, array|
+      if(handled == false)
+        selected = array.map do |inner|
+          inner[1]
+        end
+        # TODO: change the first and last handled?
+        joined = "<p>" + selected.join(' ') + "</p>"
+        translated << joined
+      else
+        translated << array.flatten()[1]
+      end
+    end
+
+    translated.join('')
+  end
+
+  # could really just use gsub here, except that means RE's
+  def header(line)
+    # number of #'s
+    pound_len = line.index(" ")
+    pound_len = 1 if !pound_len # in case this is just "#" in a line
+    len_str = pound_len.to_s
+    output = "<h" + len_str + ">"
+    if(line.length > 1)
+      output += line[pound_len + 1..-1]
+    end
+    output += "</h" + len_str + ">"
+
   end
 
   def build_top_level_node(input, rules)
