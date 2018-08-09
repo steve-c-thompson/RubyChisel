@@ -57,4 +57,16 @@ describe MarkdownTranslator do
     expect(@translator.to_html(test_str)).to eq expected
   end
 
+  it "parses ul lists" do
+    test_str = "Paragraph text\n\n* Item 1\n* Item 2"
+    expected = '<p>Paragraph text</p><ul><li>Item 1</li><li>Item 2</li></ul>'
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "parses ul lists with headers" do
+    test_str = "## Header\n* Item 1\n* Item 2"
+    expected = '<h2>Header</h2><ul><li>Item 1</li><li>Item 2</li></ul>'
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
 end
