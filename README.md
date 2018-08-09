@@ -8,7 +8,7 @@ There are two types of rules to worry about:
 
 ## Implementation
 
-The main logic feels like it would use a stack by reading through each line and see if a character matches one of the rules (`#, *_, **, *`), then add that rule to the stack and continue parsing. When another rule token is encountered, check the stack to see if the rule is being opened or closed.
+The main logic feels like it would use a stack by reading through each line and see if a character matches one of the rules (`#_, *_, *, *`), then add that rule to the stack and continue parsing. When another rule token is encountered, check the stack to see if the rule is being opened or closed.
 
 On either side of the parsing engine would be an input and output source. These should be swappable, e.g. the input source should return a String, whether that String came from the screen or a file. Same with the output: take String of HTML and send it _somewhere_ (screen, file, etc.).
 
