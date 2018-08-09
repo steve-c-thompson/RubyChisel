@@ -5,6 +5,8 @@ class MarkdownTranslator
 
   def initialize
     # rules for lines
+    @top_level_rules = ["* ", "#"]
+
     @line_rules = {
       # '###### ' => MarkdownRule.new('###### ', "\n", "<h6>", "</h6>"),
       # '##### ' => MarkdownRule.new('##### ', "\n", "<h5>", "</h5>"),
@@ -12,8 +14,6 @@ class MarkdownTranslator
       # '### ' => MarkdownRule.new('### ', "\n", "<h3>", "</h3>"),
       # '## ' => MarkdownRule.new('## ', "\n", "<h2>", "</h2>"),
       # '# ' => MarkdownRule.new('# ', "\n", "<h1>", "</h1>"),
-      "" => MarkdownRule.new("* ", "", "<li>", "</li>", "<ul>", "</ul>"),
-      "" => MarkdownRule.new("", "", "", "", "<p>", "</p>")
     }
 
     @content_element_stack = []
@@ -64,7 +64,7 @@ class MarkdownTranslator
     output << "<p>"
     # gather non-matching lines
     line_list = gather_nonmatching_lines(lines.slice(index..-1),
-  ["* ", "#"])
+  @top_level_rules)
     # add all and replace \n with space
     output << line_list.join(' ')
     output << "</p>"
