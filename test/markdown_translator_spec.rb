@@ -127,10 +127,50 @@ describe MarkdownTranslator do
     expect(@translator.to_html(test_str)).to eq expected
   end
 
+  it "changes ul lists with inline text" do
+    test_str = "* **Item 1**\n* Item 2\n* ***Item 3***"
+    expected = '<ul><li><strong>Item 1</strong></li><li>Item 2</li><li><strong><em>Item 3</em></strong></li></ul>'
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
   it "can strong and em text when markdown together" do
     test_str = "***strong em***"
     expected = "<p><strong><em>strong em</em></strong></p>"
     expect(@translator.to_html(test_str)).to eq expected
   end
 
+  it "can strong em strong text" do
+    test_str = "**strong** *em*\n**strong again**"
+    expected = "<p><strong>strong</strong> <em>em</em></p><p><strong>strong again</strong></p>"
+  end
+
+  it "parses ol lists with 1." do
+    test_str = "Paragraph text\n\n1. Item 1\n1. Item 2"
+    expected = '<p>Paragraph text</p><ol><li>Item 1</li><li>Item 2</li></ol>'
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "parses ol lists with headers and 1. 2." do
+    test_str = "## Header\n1. Item 1\n2. Item 2"
+    expected = '<h2>Header</h2><ol><li>Item 1</li><li>Item 2</li></ol>'
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "parses ol lists with headers and arbitrary numbres" do
+    test_str = "## Header\n11. Item 1\n22. Item 2\n0. Item 3"
+    expected = '<h2>Header</h2><ol><li>Item 1</li><li>Item 2</li><li>Item 3</li></ol>'
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "parses ol line with inline strong em" do
+    test_str = '0. ***Item 3***'
+    expected = "<ol><li><strong><em>Item 3</em></strong></li></ol>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "parses ol lists with inline text" do
+    test_str = "11. **Item 1**\n22. Item 2\n0. ***Item 3***"
+    expected = '<ol><li><strong>Item 1</strong></li><li>Item 2</li><li><strong><em>Item 3</em></strong></li></ol>'
+    expect(@translator.to_html(test_str)).to eq expected
+  end
 end

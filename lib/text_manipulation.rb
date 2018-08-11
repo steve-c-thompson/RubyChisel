@@ -12,8 +12,7 @@ module TextManipulation
   end
 
   # Substitute to index, return [sub, rest_of_input]
-  def do_substitution_to_index(input, idx, subst, replacement)
-    subst_len = subst.length
+  def do_substitution_to_index(input, idx, subst_len, replacement)
     front = input[0...idx]
     subst_end = idx + subst_len
     output_buffer = ""
