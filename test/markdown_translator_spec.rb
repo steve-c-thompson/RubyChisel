@@ -127,4 +127,10 @@ describe MarkdownTranslator do
     expect(@translator.to_html(test_str)).to eq expected
   end
 
+  it "can strong and em text when markdown together" do
+    test_str = "***strong em***"
+    expected = "<p><strong><em>strong em</em></strong></p>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
 end
