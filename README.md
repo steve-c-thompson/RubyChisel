@@ -13,6 +13,23 @@ The main logic feels like it would use a stack by reading through each line and 
 On either side of the parsing engine would be an input and output source. These should be swappable, e.g. the input source should return a String, whether that String came from the screen or a file. Same with the output: take String of HTML and send it _somewhere_ (screen, file, etc.).
 
 
+### Final Implementation
+This was harder than I thought. I tried to do the top-level and inline parsing in one swipe, but they proved to be two different things.
+
+A simple implementation of inline conversion would use `sub` or `gsub`, but that doesn't handle the case of strong and em text: `***text***` should change to `<strong><em>text</em></strong>`.
+
+To fix this, I used a stack of rules that are open, then a recursive call to the method that searches for other rules. This way I could check if the previous rule was closed, or a new rule was opened. This design could handle the addition of more rules.
+
+I ended up doing three passes of the text, pretty much prescribed by the project description.
+
+* Top-level line parsing to see what lines start with.
+  * The challenge here is grouping the lines. At first I had used [Enumerable.chunk](https://ruby-doc.org/core-2.2.3/Enumerable.html#method-i-chunk), but that didn't work for arbitrarily-numbered ordered lists. I ended up writing methods to group lines by type or rule.
+  * Grouping by arbitrary numbers, without regular expressions, was a challenge. I decided to write a method in a module that checked if the ordinal values of a String's characters were all between 48 and 59, the ASCII values. (String.to_i)[https://ruby-doc.org/core-2.2.0/String.html#method-i-to_i] returns `0` for an invalid String, so I couldn't use that.
+* Inline HTML rule parsing. This uses inline rules, and the stack of open rules. The requirements said no regexes, so I wrote a method to do substitution, but I should have just used `sub` (which I ended up using on the third pass).
+* Individual character parsing. There is some sample output in the requirements that has `&amp;`, so I had to add this. It would be easy to add characters for future translation.
+
+#### RSpec
+I used RSpec for this, for the practice. My descriptions are probably too detailed, though.
 
 <hr>
 
