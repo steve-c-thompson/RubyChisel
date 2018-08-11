@@ -119,4 +119,12 @@ describe MarkdownTranslator do
     expect(@translator.to_html(test_str)).to eq expected
   end
 
+  it "changes inline bullet * * with ** ** in other text strong and em" do
+    test_str = "* *EM **STRONG** text* **more strong**"
+    test_str <<"\n* more text"
+    expected = "<ul><li><em>EM <strong>STRONG</strong> text</em> <strong>more strong</strong></li>"
+    expected << "<li>more text</li></ul>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
 end

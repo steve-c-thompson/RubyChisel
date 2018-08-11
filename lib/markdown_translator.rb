@@ -135,19 +135,11 @@ class MarkdownTranslator
           #p "old rule found at #{old_rule_close_idx}: #{old_rule} and new_rule_idx is #{new_rule_idx}"
           # if so, close the old rule
           old_rule = rule_stack.pop
-          r = old_rule
-          idx = old_rule_close_idx
-          tag = r.md_close
-          replacement = r.html_close
-          tag_len = tag.length
           output_buffer = ""
-          front = input[0...idx]
-          tag_end = idx + tag_len
-          output_buffer << front
-          output_buffer << replacement
-          output_buffer << input[tag_end..-1]
 
-          input = output_buffer
+          input = do_substitution(input, old_rule_close_idx, old_rule.md_close, old_rule.html_close, output_buffer)
+
+          input = output_buffer + input
           # reset new_rule_idx to avoid processing
           new_rule_idx = nil
         end
@@ -156,30 +148,30 @@ class MarkdownTranslator
         #p "Processing new rule #{rule}"
         # put a new rule on the stack of rules
         rule_stack.push markdown_obj;
-        # break the text into front, tag, and back
-        r = markdown_obj
-        idx = new_rule_idx
-        tag = r.md_open
-        replacement = r.html_open
-        tag_len = tag.length
-        front = input[0...idx]
-        tag_end = idx + tag_len
-        # tag = input[new_rule_idx..tag_end]
-        output_buffer = ""
-        output_buffer << front
-        output_buffer << replacement  #substitution
-
-        input = input[tag_end..-1]
         # create a subset of rules
         rule_subset = rule_set.reject do |key, value|
           rule == key
         end
+
+        output_buffer = ""
+        input = do_substitution(input, new_rule_idx, markdown_obj.md_open, markdown_obj.html_open, output_buffer)
 
         # recursive call with subset of rules
         input = output_buffer + build_inline_content(input, rule_subset, rule_stack)
       end
     end
     return input
+  end
+
+  def do_substitution(input, idx, tag, replacement, output_buffer)
+    tag_len = tag.length
+    front = input[0...idx]
+    tag_end = idx + tag_len
+    # tag = input[new_rule_idx..tag_end]
+    output_buffer << front
+    output_buffer << replacement  #substitution
+
+    input = input[tag_end..-1]
   end
 
   def check_if_number_start(str)
