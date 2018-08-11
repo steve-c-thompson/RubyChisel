@@ -24,7 +24,7 @@ I ended up doing three passes of the text, pretty much prescribed by the project
 
 * Top-level line parsing to see what lines start with.
   * The challenge here is grouping the lines. At first I had used [Enumerable.chunk](https://ruby-doc.org/core-2.2.3/Enumerable.html#method-i-chunk), but that didn't work for arbitrarily-numbered ordered lists. I ended up writing methods to group lines by type or rule.
-  * Grouping by arbitrary numbers, without regular expressions, was a challenge. I decided to write a method in a module that checked if the ordinal values of a String's characters were all between 48 and 59, the ASCII values. (String.to_i)[https://ruby-doc.org/core-2.2.0/String.html#method-i-to_i] returns `0` for an invalid String, so I couldn't use that.
+  * Grouping by arbitrary numbers, without regular expressions, was a pain. I decided to write a method in a module that checked if the ordinal values of a String's characters were all between 48 and 59, the ASCII values. (String.to_i)[https://ruby-doc.org/core-2.2.0/String.html#method-i-to_i] returns `0` for an invalid String, so I couldn't use that.
 * Inline HTML rule parsing. This uses inline rules, and the stack of open rules. The requirements said no regexes, so I wrote a method to do substitution, but I should have just used `sub` (which I ended up using on the third pass).
 * Individual character parsing. There is some sample output in the requirements that has `&amp;`, so I had to add this. It would be easy to add characters for future translation.
 
