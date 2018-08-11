@@ -31,6 +31,9 @@ I ended up doing three passes of the text, pretty much prescribed by the project
 #### RSpec
 I used RSpec for this, for the practice. My descriptions are probably too detailed, though.
 
+#### Ruby Debugging
+Debugging this was such a pain: printlines, pry. I need an IDE for this - a real debugger has to exist.
+
 <hr>
 
 ## Before You Begin
