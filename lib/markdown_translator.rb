@@ -1,5 +1,4 @@
 require_relative 'markdown_rule'
-require_relative 'content_node'
 
 class MarkdownTranslator
 
@@ -7,13 +6,9 @@ class MarkdownTranslator
     # rules for lines
     @top_level_rules = ["* ", "#"]
 
-    @line_rules = {
-      # '###### ' => MarkdownRule.new('###### ', "\n", "<h6>", "</h6>"),
-      # '##### ' => MarkdownRule.new('##### ', "\n", "<h5>", "</h5>"),
-      # '#### ' => MarkdownRule.new('#### ', "\n", "<h4>", "</h4>"),
-      # '### ' => MarkdownRule.new('### ', "\n", "<h3>", "</h3>"),
-      # '## ' => MarkdownRule.new('## ', "\n", "<h2>", "</h2>"),
-      # '# ' => MarkdownRule.new('# ', "\n", "<h1>", "</h1>"),
+    @inline_rules = {
+      '**' => MarkdownRule.new('**', '**', '<strong>', '</strong>'),
+      '*' => MarkdownRule.new('*', '*', '<em>', '</em>')
     }
 
     @content_element_stack = []
@@ -32,17 +27,14 @@ class MarkdownTranslator
       build_top_level_content(lines, output)
     end
 
+
+    rule_stack = []   # stack for rules that are open
+    old_output = ""
+    while(old_output != output)
+      old_output = output
+      output = build_inline_content(old_output, @inline_rules, rule_stack)
+    end
     output
-
-    # builds nodes for each node's inner content
-    # require 'pry'
-    # binding.pry
-
-    # output = @content_element_stack.reduce("") do |str, node|
-    #   str << node.build_html
-    # end
-
-    #output.gsub("\n", " ")
   end
 
   def handle_ul_list(lines, index, output)
@@ -122,12 +114,83 @@ class MarkdownTranslator
     output
   end
 
+  # Switch this to only using input and return value, no buffer
+  def build_inline_content(input, rule_set, rule_stack)
+
+    # copy text into output buffer until rule is hit
+    rule_set.each() do |rule, markdown_obj|
+      new_rule_idx = input.index(markdown_obj.md_open)
+
+      # check for an old rule on the stack to close
+      old_rule_close_idx = nil
+      if(rule_stack.length > 0)
+        old_rule = rule_stack.last
+        old_rule_close_idx = input.index(old_rule.md_close)
+      end
+
+      # rule on the stack that needs closing
+      if(old_rule_close_idx)
+        # if there's a new rule, see if it comes after close
+        if(new_rule_idx == nil || new_rule_idx >= old_rule_close_idx)
+          #p "old rule found at #{old_rule_close_idx}: #{old_rule} and new_rule_idx is #{new_rule_idx}"
+          # if so, close the old rule
+          old_rule = rule_stack.pop
+          r = old_rule
+          idx = old_rule_close_idx
+          tag = r.md_close
+          replacement = r.html_close
+          tag_len = tag.length
+          output_buffer = ""
+          front = input[0...idx]
+          tag_end = idx + tag_len
+          output_buffer << front
+          output_buffer << replacement
+          output_buffer << input[tag_end..-1]
+
+          input = output_buffer
+          # reset new_rule_idx to avoid processing
+          new_rule_idx = nil
+        end
+      end
+      if(new_rule_idx)
+        #p "Processing new rule #{rule}"
+        # put a new rule on the stack of rules
+        rule_stack.push markdown_obj;
+        # break the text into front, tag, and back
+        r = markdown_obj
+        idx = new_rule_idx
+        tag = r.md_open
+        replacement = r.html_open
+        tag_len = tag.length
+        front = input[0...idx]
+        tag_end = idx + tag_len
+        # tag = input[new_rule_idx..tag_end]
+        output_buffer = ""
+        output_buffer << front
+        output_buffer << replacement  #substitution
+
+        input = input[tag_end..-1]
+        # create a subset of rules
+        rule_subset = rule_set.reject do |key, value|
+          rule == key
+        end
+
+        # recursive call with subset of rules
+        input = output_buffer + build_inline_content(input, rule_subset, rule_stack)
+      end
+    end
+    return input
+  end
+
   def check_if_number_start(str)
-    first_space = str.index(". ")
-    if(first_space && first_space > 0)
+    dot_index = str.index(". ")
+    if(dot_index && dot_index > 0)
       # see if we can get a number from this text
-      num = str[0...first_space].to_i
+      num = str[0...dot_index].to_i
       # this could be zero for invalid, or an actual number
+
+      # could check each ordinal to make sure it's in the ASCII
+      # range for numbers
     end
 
   end
@@ -145,58 +208,4 @@ class MarkdownTranslator
     output += "</h" + len_str + ">"
 
   end
-
-  # build a node from this string, checking for the start
-  # of any other nodes within the node
-  # closer is the parent's closing tag
-  def build_inline_node(input, rules, closer=nil)
-
-    # check what this text starts with from rules
-    rule_index = 0
-    rule_key = rules.keys().find do |key|
-      rule_index = input.index(key)
-      rule_index && rule_index >= 0
-    end
-    # require 'pry'
-    # binding.pry
-    rule_index = 0 if !rule_index
-
-    end_index = 0
-    rule = nil
-    if(rule_key)
-      rule = rules[rule_key]
-
-      rule_end = rule.md_close
-      # TODO: scan for new rule or end of this rule
-      # and use substrings
-
-      # find where to end
-      if(rule_end.length > 0)
-        idx = input.index(rule_end)
-        if(idx)
-          end_index = idx
-        else
-          end_index = input.length
-        end
-      else
-        end_index = input.length
-      end
-
-    else
-      end_index = input.length
-    end
-
-    st = rule_index + rule_key.length
-    #require 'pry'
-    #binding.pry
-    content = input[st...end_index]
-
-    node = ContentNode.new(rule)
-    node.add_to_content(content)
-
-
-    return node
-  end
-
-
 end

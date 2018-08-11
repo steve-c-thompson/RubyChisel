@@ -8,4 +8,8 @@ class MarkdownRule
     @html_close = html_close
   end
 
+  def to_s
+    "MarkdownRule:#{object_id} @md_open: #{md_open}, @md_close: #{md_close}, @html_open #{html_open}, @html_close: #{html_close}"
+  end
+
 end

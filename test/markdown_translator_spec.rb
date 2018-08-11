@@ -69,4 +69,54 @@ describe MarkdownTranslator do
     expect(@translator.to_html(test_str)).to eq expected
   end
 
+  it "changes inline **text** to  <strong>text</strong>" do
+    test_str = "**text**"
+    expected = "<p><strong>text</strong></p>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "changes inline **** to  <strong></strong>" do
+    test_str = "****"
+    expected = "<p><strong></strong></p>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "changes inline ** ** in other text to <strong></strong>" do
+    test_str = "words **strong** more"
+    expected = "<p>words <strong>strong</strong> more</p>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "changes inline header ** ** in other text to <strong></strong>" do
+    test_str = "# **strong** more"
+    expected = "<h1><strong>strong</strong> more</h1>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "changes inline * * in other text to <em> some text </em>" do
+    test_str = "words * some text * more"
+    expected = "<p>words <em> some text </em> more</p>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "changes inline header * * in other text to <em></em>" do
+    test_str = "# *emphasis* more"
+    expected = "<h1><em>emphasis</em> more</h1>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "changes mixed ** and * to em and strong" do
+    test_str = "**strong and *emphasized text* strings**"
+    expected = "<p><strong>strong and <em>emphasized text</em> strings</strong></p>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "changes inline bullet * * with ** ** in other text strong and em" do
+    test_str = "* *EM **STRONG** text*"
+    test_str <<"\n* more text"
+    expected = "<ul><li><em>EM <strong>STRONG</strong> text</em></li>"
+    expected << "<li>more text</li></ul>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
 end
