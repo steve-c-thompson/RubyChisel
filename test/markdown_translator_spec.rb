@@ -139,6 +139,12 @@ describe MarkdownTranslator do
     expect(@translator.to_html(test_str)).to eq expected
   end
 
+  it "can strong followed by strong" do
+    test_str = "**strong** **more strong**"
+    expected = "<p><strong>strong</strong> <strong>more strong</strong></p>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
   it "can strong em strong text" do
     test_str = "**strong** *em*\n**strong again**"
     expected = "<p><strong>strong</strong> <em>em</em></p><p><strong>strong again</strong></p>"
