@@ -179,4 +179,31 @@ describe MarkdownTranslator do
     expected = '<ol><li><strong>Item 1</strong></li><li>Item 2</li><li><strong><em>Item 3</em></strong></li></ol>'
     expect(@translator.to_html(test_str)).to eq expected
   end
+
+  it "parses large chunks of text to html" do
+    test_str = "# My Life in Desserts"
+    test_str << "\n\n"
+    test_str << "## Chapter 1: The Beginning"
+    test_str << "\n\n"
+    test_str << '"You just *have* to try the cheesecake," he said. "Ever since it appeared in'
+    test_str << "\n"
+    test_str << '**Food & Wine** this place has been packed every night."'
+
+    expected = "<h1>My Life in Desserts</h1>"
+    expected << '<h2>Chapter 1: The Beginning</h2>'
+
+    expected << '<p>'
+    expected << '"You just <em>have</em> to try the cheesecake," he said. "Ever since it appeared in '
+    expected << '<strong>Food &amp; Wine</strong> this place has been packed every night."'
+    expected << '</p>'
+
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
+  it "parses & to &amp;" do
+    test_str = "Food & wine"
+    expected = "<p>Food &amp; wine</p>"
+    expect(@translator.to_html(test_str)).to eq expected
+  end
+
 end

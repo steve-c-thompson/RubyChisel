@@ -14,6 +14,10 @@ class MarkdownTranslator
       '*' => MarkdownRule.new('*', '*', '<em>', '</em>')
     }
 
+    @character_rules = {
+      "&" => "&amp;"
+    }
+
     @content_element_stack = []
   end
 
@@ -30,13 +34,16 @@ class MarkdownTranslator
       output << build_top_level_content(lines)
     end
 
-    #p output
-
     rule_stack = []   # stack for rules that are open
     old_output = ""
     while(old_output != output)
       old_output = output
       output = build_inline_content(old_output, @inline_rules, rule_stack)
+    end
+
+    # finally, replace html chars
+    @character_rules.each do |key, val|
+      output.gsub!(key, val)
     end
     output
   end
