@@ -14,6 +14,10 @@ class MarkdownTranslator
       '*' => MarkdownRule.new('*', '*', '<em>', '</em>')
     }
 
+    @character_rules = {
+      "&" => "&amp;"
+    }
+
     @content_element_stack = []
   end
 
@@ -27,15 +31,19 @@ class MarkdownTranslator
       # eat any whitespace
       chunk.strip!
       lines = chunk.split("\n")
-      build_top_level_content(lines, output)
+      output << build_top_level_content(lines)
     end
-
 
     rule_stack = []   # stack for rules that are open
     old_output = ""
     while(old_output != output)
       old_output = output
       output = build_inline_content(old_output, @inline_rules, rule_stack)
+    end
+
+    # finally, replace html chars
+    @character_rules.each do |key, val|
+      output.gsub!(key, val)
     end
     output
   end
@@ -55,6 +63,24 @@ class MarkdownTranslator
     line_list.size()
   end
 
+  def handle_ol_lists(lines, index, output)
+    output << "<ol>"
+    lines_list = gather_numeric_lines(lines.slice(index..-1))
+
+    lines_list.each do |l|
+      char_index_after_num_and_space = l.index('.') + 2
+      char_index_after_num_and_space -= 1 if char_index_after_num_and_space > l.length
+      arr = do_substitution_to_index(l, 0, char_index_after_num_and_space , "<li>")
+
+      output << arr[0] << arr[1]
+      output << "</li>"
+    end
+
+    output << "</ol>"
+
+    lines_list.size()
+  end
+
   def handle_paragraph(lines, index, output)
     output << "<p>"
     # gather non-matching lines
@@ -64,6 +90,20 @@ class MarkdownTranslator
     output << line_list.join(' ')
     output << "</p>"
     line_list.size()
+  end
+
+  def gather_numeric_lines(lines)
+    line_list = []
+
+    lines.each do |l|
+      if(check_if_number_start(l))
+        line_list << l
+      else
+        break;
+      end
+    end
+
+    line_list
   end
 
   def gather_matching_lines(lines, rule)
@@ -97,8 +137,9 @@ class MarkdownTranslator
 
   # This handles grouped lines and assumes
   # headers can follow paragraph lines
-  def build_top_level_content(lines, output)
+  def build_top_level_content(lines)
 
+    output = ""
     i = 0
     while i < lines.length do
       if(lines[i].start_with? "#")
@@ -106,6 +147,9 @@ class MarkdownTranslator
         i += 1
       elsif(lines[i].start_with? "* ")
         num_lines = handle_ul_list(lines, i, output)
+        i += num_lines
+      elsif(check_if_number_start(lines[i]))
+        num_lines = handle_ol_lists(lines, i, output)
         i += num_lines
       else
         # paragraph
@@ -120,8 +164,21 @@ class MarkdownTranslator
   # Switch this to only using input and return value, no buffer
   def build_inline_content(input, rule_set, rule_stack)
 
-    # copy text into output buffer until rule is hit
-    rule_set.each() do |rule, markdown_obj|
+    #p "build_inline_content with rule_set #{rule_set.keys()}"
+
+    #rule_enum = rule_set.each # for rewinding
+    #rule_enum.each do |rule, markdown_obj|
+
+    # Doing manual iteration here so that the loop can start over
+    # Tried rewind with inside each, but it didn't work,
+    # and using rescue StopIteration (or any exception mechanism)
+    # to control program flow isn't the best idea.
+    i = 0
+    while(i < rule_set.size)
+      rule = rule_set.keys()[i]
+      markdown_obj = rule_set[rule]
+      i += 1
+      #p "checking for rule #{rule}"
       new_rule_idx = input.index(markdown_obj.md_open)
 
       # check for an old rule on the stack to close
@@ -139,16 +196,20 @@ class MarkdownTranslator
           # if so, close the old rule
           old_rule = rule_stack.pop
 
-          buf = do_substitution_to_index(input, old_rule_close_idx, old_rule.md_close, old_rule.html_close)
+          buf = do_substitution_to_index(input, old_rule_close_idx, old_rule.md_close.length, old_rule.html_close)
           output_buffer = buf[0]
           input = buf[1]
 
           input = output_buffer + input
           # reset new_rule_idx to avoid processing
+          # rule_enum.rewind
+          #p "old rule #{old_rule.md_close} closed"
+
           new_rule_idx = nil
         end
       end
       if(new_rule_idx)
+        #p "new rule #{rule} at #{new_rule_idx} with rules #{rule_set.keys()}"
         #p "Processing new rule #{rule}"
         # put a new rule on the stack of rules
         rule_stack.push markdown_obj;
@@ -157,14 +218,19 @@ class MarkdownTranslator
           rule == key
         end
 
-        buf = do_substitution_to_index(input, new_rule_idx, markdown_obj.md_open, markdown_obj.html_open)
+        buf = do_substitution_to_index(input, new_rule_idx, markdown_obj.md_open.length, markdown_obj.html_open)
         output_buffer = buf[0]
         input = buf[1]
 
         # recursive call with subset of rules
         input = output_buffer + build_inline_content(input, rule_subset, rule_stack)
+        # rewind to start over will all rules
+        #rule_enum.rewind
+        i = 0
+        #p "Rewinding enum to start over after rule #{rule}"
       end
     end
+    #p "end build_inline_content with #{input} and rule_stack #{rule_stack}"
     return input
   end
 
